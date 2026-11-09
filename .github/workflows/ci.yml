@@ -18,7 +18,7 @@ jobs:
     name: Data protection guard
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Fail if data, outputs or office documents are tracked
         run: |
           tracked=$(git ls-files \
@@ -35,7 +35,7 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: r-lib/actions/setup-r@v2
         with:
           use-public-rspm: true
@@ -58,7 +58,7 @@ jobs:
       EBOLA_DATA_DIR: ${{ github.workspace }}/data-synthetic
       EBOLA_OUTPUT_DIR: ${{ github.workspace }}/ci-output
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: r-lib/actions/setup-r@v2
         with:
           use-public-rspm: true
