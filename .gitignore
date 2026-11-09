@@ -1,0 +1,80 @@
+# =============================================================================
+#  DATA PROTECTION — patient-level data must NEVER be committed.
+#  Line lists contain names, ages, locations and clinical information.
+#  See SECURITY.md before changing anything in this section.
+# =============================================================================
+
+# Everything under data/ is ignored, except the README and folder placeholders
+data/**
+!data/
+!data/README.md
+!data/*/
+!data/*/.gitkeep
+
+# Synthetic data is regenerated on demand (scripts/make_synthetic_data.R)
+data-synthetic/
+
+# Outputs can contain patient identifiers (QA exports, line listings)
+output/**
+!output/
+!output/*/
+!output/*/.gitkeep
+
+# Private material: original documents, organisational templates and logos
+private/
+reports/templates/*
+!reports/templates/reference.docx
+!reports/templates/README.md
+
+# Spreadsheets, documents and exports anywhere else in the tree
+*.xlsx
+*.xls
+*.xlsm
+*.csv
+!config/*.csv
+*.sav
+*.dta
+*.rds
+*.RData
+*.rda
+*.docx
+!reports/templates/reference.docx
+*.pdf
+*.pptx
+
+# Rendered reports
+reports/*.html
+reports/*_files/
+reports/*.docx
+
+# =============================================================================
+#  R / RStudio / Quarto
+# =============================================================================
+.Rproj.user/
+.Rhistory
+.Rapp.history
+.RDataTmp
+.Ruserdata
+.Renviron
+.httr-oauth
+*_cache/
+/cache/
+.quarto/
+*.knit.md
+*.utf8.md
+renv/library/
+renv/local/
+renv/staging/
+
+# =============================================================================
+#  OS / editors
+# =============================================================================
+.DS_Store
+Thumbs.db
+desktop.ini
+~$*
+*.tmp
+*.swp
+.vscode/
+.idea/
+.claude/

@@ -1,0 +1,14 @@
+* text=auto eol=lf
+*.R    text eol=lf diff=r
+*.qmd  text eol=lf
+*.md   text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+*.csv  text eol=lf
+*.bat  text eol=crlf
+*.docx binary
+*.xlsx binary
+*.png  binary
+
+# Language statistics
+*.qmd linguist-detectable=true
