@@ -86,7 +86,7 @@ jobs:
         run: Rscript -e "cutoff <- as.Date('2026-11-08'); source('R/03_qa_linelist.R')"
 
       - name: Upload synthetic reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: synthetic-reports
           path: ci-output/
