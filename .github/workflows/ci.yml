@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  data-guard:
+    name: Data protection guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fail if data, outputs or office documents are tracked
+        run: |
+          tracked=$(git ls-files \
+            | grep -Ei '\.(xlsx|xls|xlsm|csv|sav|dta|rds|rdata|rda|docx|pdf|pptx)$|^(data|output|private|data-synthetic)/' \
+            | grep -Ev '^config/[^/]+\.csv$|^reports/templates/reference\.docx$|^data/README\.md$|/\.gitkeep$' || true)
+          if [ -n "$tracked" ]; then
+            echo "::error::Data or document files are tracked (see SECURITY.md):"
+            echo "$tracked"
+            exit 1
+          fi
+          echo "No data files tracked."
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          dependencies: '"hard"'
+          extra-packages: any::lintr
+      - name: Lint R code
+        run: |
+          lints <- c(lintr::lint_dir("R"), lintr::lint_dir("scripts"), lintr::lint_dir("tests"))
+          print(lints)
+          if (length(lints) > 0) quit(status = 1)
+        shell: Rscript {0}
+
+  test:
+    name: Tests and reports (synthetic data)
+    runs-on: ubuntu-latest
+    needs: data-guard
+    env:
+      EBOLA_DATA_DIR: ${{ github.workspace }}/data-synthetic
+      EBOLA_OUTPUT_DIR: ${{ github.workspace }}/ci-output
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          dependencies: '"hard"'
+          extra-packages: |
+            any::testthat
+            any::withr
+      - uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Unit and end-to-end tests
+        run: Rscript tests/testthat.R
+
+      - name: Generate synthetic data
+        run: Rscript scripts/make_synthetic_data.R data-synthetic 600
+
+      - name: Render weekly sitrep
+        run: Rscript scripts/render.R weekly 2026-11-08
+
+      - name: Render analysis plan report
+        run: Rscript scripts/render.R analysis_plan 2026-11-08
+
+      - name: Data quality checklist
+        run: Rscript -e "cutoff <- as.Date('2026-11-08'); source('R/03_qa_linelist.R')"
+
+      - name: Upload synthetic reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: synthetic-reports
+          path: ci-output/
+          retention-days: 14

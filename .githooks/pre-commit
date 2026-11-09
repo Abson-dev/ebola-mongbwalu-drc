@@ -1,0 +1,28 @@
+#!/bin/sh
+# -----------------------------------------------------------------------------
+#  Data protection pre-commit hook
+#  Refuses to commit patient data, outputs or office documents.
+#  Enable once per clone:   git config core.hooksPath .githooks
+# -----------------------------------------------------------------------------
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -z "$staged" ] && exit 0
+
+blocked=$(printf '%s\n' "$staged" \
+  | grep -Ei '\.(xlsx|xls|xlsm|csv|sav|dta|rds|rdata|rda|docx|pdf|pptx)$|^(data|output|private|data-synthetic)/' \
+  | grep -Ev '^config/[^/]+\.csv$|^reports/templates/reference\.docx$|^data/README\.md$|/\.gitkeep$')
+
+if [ -n "$blocked" ]; then
+  echo "✖ Commit blocked by the data protection hook (see SECURITY.md):" >&2
+  printf '%s\n' "$blocked" | sed 's/^/   /' >&2
+  echo "  Patient data, outputs and office documents must never be committed." >&2
+  exit 1
+fi
+
+# Block phone numbers in staged text changes (DRC international format +243 / 00243)
+if git diff --cached -U0 | grep -E '^\+' | grep -Eq '(\+243|00243)[ -]?[0-9]{2,3}[ -]?[0-9]{3}[ -]?[0-9]{3,4}'; then
+  echo "✖ A staged change looks like a phone number. Remove it before committing." >&2
+  exit 1
+fi
+
+exit 0
