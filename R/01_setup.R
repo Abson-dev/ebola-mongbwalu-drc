@@ -1,153 +1,107 @@
-################################################
+################################################################################
 #
 #   MSF OCG - Mongbwalu - Ebola Bundibugyo
 #
-#   1. Setup
+#   1. Setup: configuration, packages, helpers, reporting period
 #
-#   Author: Stephanie Ngai
-#   Last updated: 17 September 2026
+#   Author: Stephanie Ngai (original), refactored by Aboubacar Hema
+#   Last updated: 9 November 2026
 #
-################################################
+################################################################################
 
+
+# Configuration and helper functions --------------------------------------
+
+source(here::here("R", "00_config.R"), encoding = "UTF-8")
+
+for (f in list.files(here::here("R", "funcs"), pattern = "\\.R$", full.names = TRUE)) {
+  source(f, encoding = "UTF-8")
+}
+rm(f)
+
+
+# Packages ----------------------------------------------------------------
+#  Packages are NOT installed automatically at run time (reproducibility).
+#  Install them once with:  source(here::here("scripts", "install_packages.R"))
+
+required_packages <- c(
+  "tidyverse", "lubridate", "scales", "janitor", "readxl", "openxlsx",
+  "gtsummary", "flextable", "officer", "knitr", "aweek", "patchwork", "here"
+)
+
+missing_packages <- required_packages[!vapply(required_packages, requireNamespace,
+                                              logical(1), quietly = TRUE)]
+if (length(missing_packages) > 0) {
+  stop("Missing packages: ", paste(missing_packages, collapse = ", "),
+       "\nRun: source(here::here('scripts', 'install_packages.R'))", call. = FALSE)
+}
+
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(lubridate)
+  library(scales)
+  library(janitor)
+  library(openxlsx)
+  library(gtsummary)
+  library(flextable)
+  library(aweek)
+  library(patchwork)
+})
 
 
 # Reporting cutoff date ---------------------------------------------------
+#  `report_date` can be set before sourcing this file (e.g. by the render
+#  script). Otherwise: today if today is Sunday, else the last Sunday, i.e.
+#  the end of the latest complete epidemiological week.
 
-#  By default: latest complete week
-#  Uncomment second line and change manually as needed
-#  Usually taken from render document
-
-# report_date <- if (!exists("report_date")) {
-#   lubridate::floor_date(Sys.Date(), "week", 1) - 1
-# } else if (is.null(report_date)) {
-#     lubridate::floor_date(Sys.Date(), "week", 1) - 1
-#   } else {
-#   report_date
-# }
-
-report_date <- if (!exists("report_date") & lubridate::wday(Sys.Date()) == 1) {
-  Sys.Date()
-} else if(!exists("report_date")) {
-  lubridate::floor_date(Sys.Date(), "week", 1) - 1
-} else if (is.null(report_date)) {
-  lubridate::floor_date(Sys.Date(), "week", 1) - 1
-} else {
-  report_date
+if (!exists("report_date") || is.null(report_date)) {
+  report_date <- if (lubridate::wday(Sys.Date()) == 1) {
+    Sys.Date()
+  } else {
+    lubridate::floor_date(Sys.Date(), "week", week_start = 1) - 1
+  }
 }
-
-
-
-
-# report_date <- as.Date("2026-09-13")
-
-
-# Load packages -----------------------------------------------------------
-
-# Ensures the package "pacman" is installed
-if (!require("pacman")) {
-  install.packages("pacman") }
-
-pacman::p_load(
-  tidyverse,
-  lubridate,
-  scales,
-  janitor,
-  readxl,
-  openxlsx,
-  gt,
-  gtsummary,
-  gtExtras,
-  flextable,
-  knitr,
-  gghighlight,
-  visNetwork,
-  ggrepel,
-  apyramid,
-  aweek,
-  vistime,
-  zoo,
-  patchwork,
-  rio,
-  here,
-  epitabulate
-)
-
-if (!require(epicontacts)) {
-  remotes::install_github("reconhub/epicontacts@timeline")
-}
-
-
-
-# Functions ---------------------------------------------------------------
-
-walk(list.files(here::here("R/funcs"), full.names = TRUE, pattern = ".R$"), source)
-
+report_date <- as.Date(report_date)
 
 
 # Figure and table defaults -----------------------------------------------
 
-## ggplot
-ggplot2::theme_set(theme_classic(base_size = 12))
+ggplot2::theme_set(ggplot2::theme_classic(base_size = 12))
+epicurve_theme <- theme_epicurve()
 
-epicurve_theme <- theme(
-  legend.title = element_blank(),
-  panel.grid.major = element_line(colour = "grey", linetype = "dashed"),
-  panel.grid.minor = element_blank(),
-  plot.caption = element_text(hjust = 0, face = "italic"),
-  strip.text.x = element_text(color = "black"))
-
-## set the day that defines the beginning of your epiweek.
+# Epidemiological weeks start on Monday
 aweek::set_week_start("Monday")
 
-## gtsummary theme
-theme_gtsummary_compact(font_size = 10)
+invisible(gtsummary::theme_gtsummary_compact(font_size = 10))
 
-##### Set default formatting for flextables
-set_flextable_defaults(font.family = "Aptos", hansi.family = "Aptos", font.size = 10,
-                       padding.bottom = 2, padding.top = 2,
-                       theme_fun="theme_booktabs",
-                       table.layout = "autofit", table_align = "left",
-                       fmt_date = "%d %b")
+flextable::set_flextable_defaults(
+  font.family = "Aptos", hansi.family = "Aptos", font.size = 10,
+  padding.bottom = 2, padding.top = 2,
+  theme_fun = "theme_booktabs",
+  table.layout = "autofit", table_align = "left",
+  fmt_date = "%d %b"
+)
 
 border_dotted <- officer::fp_border(style = "dotted", color = "grey50")
 
 
+# Epi week cut-offs -------------------------------------------------------
 
-
-# Epi week cutoffs --------------------------------------------------------
-
-## Last complete week (based on sys date)
-# date_cut <- lubridate::floor_date(Sys.Date(), "weeks", 1)-1
-
-date_cut <- if(lubridate::wday(report_date) == 1) {
+## End of the last complete week (Sunday)
+date_cut <- if (lubridate::wday(report_date) == 1) {
   report_date
 } else {
-  lubridate::floor_date(report_date, "weeks", 1)-1
+  lubridate::floor_date(report_date, "week", week_start = 1) - 1
 }
 
+## Start of the current week and of the last 21 days
+date_start_1w <- lubridate::floor_date(report_date, "week", week_start = 1)
+date_start_3w <- lubridate::floor_date(report_date - 20, "week", week_start = 1)
 
-## Start date of 21 days (based on report date)
-date_start_1w <- lubridate::floor_date(report_date, "weeks", 1)
-date_start_3w <- lubridate::floor_date(report_date-20, "weeks", 1)
-
-## Vector with last 3 weeks
-week1 <- as.character(date2week(report_date, factor = T))
-week2 <- as.character(date2week(report_date-7, factor = T))
-week3 <- as.character(date2week(report_date-14, factor = T))
-
-week1 <- str_replace(week1, "W", "S")
-week2 <- str_replace(week2, "W", "S")
-week3 <- str_replace(week3, "W", "S")
-
+## Labels of the last 3 weeks ("2026-S44")
+week1 <- epiweek_label(report_date)
+week2 <- epiweek_label(report_date - 7)
+week3 <- epiweek_label(report_date - 14)
 week3_vector <- c(week3, week2, week1)
 
-## Last 3 weeks
-# this_week <- date2week(report_date, factor = T)
-# last_week <- date2week(report_date-7, factor = T)
-# week3 <- date2week(report_date-14, factor = T)
-# 
-# last_week <- report_date - 7
-# this_week <- date2week(report_date, numeric = T)
-# week3_vector <- c(this_week-2, this_week-1, this_week)
-# week3_vector_txt <- paste0("2026_", week3_vector)
-
+message("Report date: ", format(report_date), " (", week1, ")  |  data: ", cfg$data_dir)

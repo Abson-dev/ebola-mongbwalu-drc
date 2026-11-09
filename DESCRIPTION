@@ -1,0 +1,50 @@
+Package: ebolamongbwalu
+Type: Project
+Title: Epidemiological Analysis Pipeline of the MSF Ebola Treatment Centre in Mongbwalu (DRC)
+Version: 1.0.0
+Authors@R: c(
+    person("Stephanie", "Ngai", role = c("aut")),
+    person("Aboubacar", "Hema", email = "aboubacarhema94@gmail.com", role = c("aut", "cre")),
+    person("Abdul Salam", "Mbengue", role = c("ctb"), comment = "Analysis plan"))
+Description: Data cleaning, data quality checks, weekly epidemiological sitrep
+    and descriptive/bivariate analyses of the line list of the MSF Ebola
+    treatment centre of Mongbwalu (Bundibugyo ebolavirus outbreak, Ituri,
+    Democratic Republic of the Congo, 2026). This file only declares
+    dependencies; the project is not an R package.
+License: file LICENSE.md
+Encoding: UTF-8
+Depends:
+    R (>= 4.3)
+Imports:
+    aweek,
+    dplyr,
+    flextable,
+    forcats,
+    ggplot2,
+    gtsummary (>= 2.0.0),
+    cardx,
+    here,
+    janitor,
+    knitr,
+    lubridate,
+    officer,
+    openxlsx,
+    patchwork,
+    purrr,
+    readr,
+    readxl,
+    rmarkdown,
+    scales,
+    stringr,
+    tibble,
+    tidyr,
+    tidyverse
+Suggests:
+    EpiEstim,
+    epicontacts,
+    gghighlight,
+    lintr,
+    testthat (>= 3.0.0),
+    withr
+Remotes:
+    reconhub/epicontacts@timeline

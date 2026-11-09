@@ -1,0 +1,4 @@
+# Manual corrections agreed with the clinical team, applied in R/02_data_linelist.R
+# One row per corrected value. Keep the reason explicit and dated.
+patient_site_id,variable,value,reason
+MGL1309,evd_status,Non cas,"Reclassified as non-case after lab review (S. Ngai, 2026-09-21)"

@@ -1,0 +1,14 @@
+# Records verified by the clinical team that legitimately trigger a QA rule.
+# Used by R/03_qa_linelist.R through qa_exempt("<rule>").
+rule,patient_site_id,reason
+err6c,MGL1052,Age unit verified
+err10,MGL0664,Additional lab results verified
+err10,MGL0675,Additional lab results verified
+err10,MGL0692,Additional lab results verified
+err10,MGL0699,Additional lab results verified
+err10,MGL0700,Additional lab results verified
+err15,MGL1071,Second sample not required (verified)
+err15,MGL1073,Second sample not required (verified)
+err17a,MGL1065,Sample 1 date verified
+err17a,MGL1066,Sample 1 date verified
+err17b,MGL1067,Sample 2 date verified

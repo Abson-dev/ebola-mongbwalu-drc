@@ -1,10 +1,14 @@
 ---
 title: "Sitrep Epidémio - MVE Bundibugyo - Zone de Santé de Mongbwalu"
 subtitle: "MSF OCG - RDC"
+lang: fr
+params:
+  report_date: ""
 format:
   docx:
-    reference-doc: template.docx
+    reference-doc: templates/reference.docx
     number-sections: false
+    fig-dpi: 300
 execute:
   echo: false
   warning: false
@@ -12,306 +16,172 @@ execute:
 ---
 
 ```{r setup}
+#| include: false
 
 knitr::opts_chunk$set(
-	echo = FALSE,
-	error = TRUE,
-	message = FALSE,
-	warning = FALSE,
-	fig.width  = 10,    # Figure width
-	fig.height = 5,    # Figure height
-	collapse = TRUE,
-	ft.align = "left"
+  echo = FALSE, error = FALSE, message = FALSE, warning = FALSE,
+  fig.width = 10, fig.height = 5, collapse = TRUE, ft.align = "left"
 )
 
-```
+if (nzchar(params$report_date)) report_date <- as.Date(params$report_date)
 
-```{r source}
+source(here::here("R", "01_setup.R"), encoding = "UTF-8")
+source(here::here("R", "02_data_linelist.R"), encoding = "UTF-8")
+source(here::here("R", "04_analysis_cte.R"), encoding = "UTF-8")
 
-## Source input scripts
-
-scripts <- c(
-  "01_setup.R",
-  "02_data_linelist.R",
-  "02_data_daily.R",
-  "04_analysis_cte.R",
-  "05_analysis_aggregate.R"
-)
-
-for (s in scripts) {
-  message("\n>>> Running ", s)
-  source(here::here("R", s))
+# Surveillance data are optional: the alert section is skipped if absent
+has_daily <- file.exists(path_data("daily", cfg$daily_file)) &&
+  file.exists(path_data("population", cfg$population_file))
+if (has_daily) {
+  source(here::here("R", "02_data_daily.R"), encoding = "UTF-8")
+  source(here::here("R", "05_analysis_aggregate.R"), encoding = "UTF-8")
 }
-
-
-
 ```
 
-Semaine `r week1` - `r format(date_start_3w, "%d %B")` à `r format(report_date, "%d %B %Y")`
-
-<br>
+Semaine `r week1` - `r format_date_fr(date_start_3w, "%d %B")` au `r format_date_fr(report_date)`
 
 # Points saillants
 
 - Jusqu'à `r week1` le CTE Mongbwalu a enregistré **`r n_adm` admissions**, y compris **`r n_conf` cas confirmés**.
-- En **`r week1`, `r n_adm_thisweek` nouvelles admissions** ont été enregistrées au CTE, contre `r n_adm_lastweek` en `r week2`, soit une réduction/augmentation de `r scales::percent((n_adm_thisweek-n_adm_lastweek)/n_adm_lastweek)`.
-  - Au cours de `r week1`, **`r sum(cte$evd_status == "Confirmé" & cte$rep_1w_adm == 1, na.rm = TRUE)` cas confirmés** ont été identifiés parmi les patients admis.
+- En **`r week1`, `r n_adm_thisweek` nouvelles admissions** ont été enregistrées au CTE, contre `r n_adm_lastweek` en `r week2`, soit `r pct_change_text(n_adm_thisweek, n_adm_lastweek)`.
+  - Au cours de `r week1`, **`r n_conf_thisweek` cas confirmés** ont été identifiés parmi les patients admis.
 - **`r n_conf_exits_thisweek` issues** parmi les cas confirmés ont été enregistrées en `r week1`, contre `r n_conf_exits_lastweek` en `r week2`.
-  - Ces issues comprennent **`r n_conf_gueri_thisweek` guérisons** et **`r n_conf_dcd_thisweek` décès,** dont `r scales::percent(n_conf_dcd_thisweek/(n_conf_dcd_thisweek+n_conf_gueri_thisweek))` compris des décès parmi les cas résolus.
-- Au cours de la semaine `r week1`, **XX cas confirmés ont été notifiés dans la ZS Mongbwalu**, y compris...
+  - Ces issues comprennent **`r n_conf_gueri_thisweek` guérisons** et **`r n_conf_dcd_thisweek` décès**, soit `r safe_percent(n_conf_dcd_thisweek, n_conf_dcd_thisweek + n_conf_gueri_thisweek)` de décès parmi les cas résolus.
+- Au cours de la semaine `r week1`, **[XX] cas confirmés ont été notifiés dans la ZS Mongbwalu** *(à compléter à partir de DHIS2)*.
 
-<br>
-
-# Aperçu Epidémiologique – Zone de Santé Mongbwalu
+# Aperçu épidémiologique – Zone de Santé Mongbwalu
 
 ## Alertes
 
-- Le nombre global d'alertes...
-- `r scales::percent(pct_alerts_v)` des alertes vivants ont été validées et `r scales::percent(pct_alerts_ref)` orientées vers le CTE.
+```{r alerts-text}
+#| results: asis
+if (has_daily) {
+  cat("- ", safe_percent(alerts_week1$vivants_validees, alerts_week1$alertes_vivants),
+      " des alertes vivants ont été validées et ",
+      safe_percent(alerts_week1$cas_suspect_cte, alerts_week1$vivants_validees),
+      " orientées vers le CTE.\n", sep = "")
+} else {
+  cat("*Données de surveillance quotidienne non disponibles pour cette édition.*\n")
+}
+```
 
-```{r}
-
+```{r alerts-table}
+#| eval: !expr has_daily
 t_alerts
-
 ```
 
-<br>
-
-**Tendance des alertes par semaine, ZS Mongbwalu**
-
-```{r}
-
+```{r alerts-curve}
+#| eval: !expr has_daily
+#| fig-cap: "Tendance des alertes par semaine, ZS Mongbwalu"
 g_alerts
-
 ```
 
-<br>
-
-**Tendance des alertes par semaine et Aire de Santé, ZS Mongbwalu**
-
-```{r, fig.height = 6}
-
+```{r alerts-as}
+#| eval: !expr has_daily
+#| fig-height: 6
+#| fig-cap: "Tendance des alertes par semaine et Aire de Santé, ZS Mongbwalu"
 g_alerts_as2
-
 ```
-
-<br>
-
-**Distribution géographique des alertes par Aire de Santé, ZS Mongbwalu, `r week1`**
-
-
-<br>
 
 ## Cas confirmés
 
-**Cas confirmés par semaine de notification, ZS Mongbwalu**
-
-<br>
-
-**Distribution géographique des cas confirmés par Aire de Santé et nature de l’alerte, `r paste0(week3, "-", week1)` et `r week1`, ZS Mongbwalu**
-
-<br>
+*Courbe épidémique et distribution géographique des cas confirmés notifiés dans la ZS : voir `R/08_analysis_dhis.R` (source DHIS2).*
 
 # CTE Mongbwalu
 
 **Synthèse des activités de prise en charge au CTE de Mongbwalu**
 
-```{r}
-
+```{r t1}
 t1
-
 ```
-
-<br>
 
 ## Admissions
 
-- En **`r week1`, `r n_adm_thisweek` nouvelles admissions** ont été enregistrées au CTE, contre `r n_adm_lastweek` en `r week2`, soit une augmentation/réduction de `r scales::percent((n_adm_thisweek-n_adm_lastweek)/n_adm_lastweek)`.
-  - Au cours de `r week1`, **`r sum(cte$evd_status == "Confirmé" & cte$rep_1w_adm == 1, na.rm = TRUE)` cas confirmés** ont été identifiés parmi les patients admis.
-- `r n_doa` décès à l'arrivée ont été enregistrés.
+- En **`r week1`, `r n_adm_thisweek` nouvelles admissions** ont été enregistrées au CTE, contre `r n_adm_lastweek` en `r week2`, soit `r pct_change_text(n_adm_thisweek, n_adm_lastweek)`.
+  - Au cours de `r week1`, **`r n_conf_thisweek` cas confirmés** ont été identifiés parmi les patients admis.
+- `r n_doa` décès à l'arrivée ont été enregistrés au total, dont `r n_doa_conf` confirmés.
 
-<br>
-
-**Admissions au CTE Mongbwalu par semaine d'admission et classification final de la MVE**
-
-```{r}
-
+```{r ec-adm}
+#| fig-cap: "Admissions au CTE Mongbwalu par semaine d'admission et classification finale de la MVE"
 ec_adm
-
 ```
 
-<br>
+## Occupation des lits
 
-## BOR
+- Au `r format_date_fr(report_date, "%d %B")`, le taux d'occupation des lits était de `r if (length(bor_conf)) scales::percent(bor_conf, 1) else "--"` pour les cas confirmés et de `r if (length(bor_susp)) scales::percent(bor_susp, 1) else "--"` pour les cas suspects.
 
-- Le taux d’occupation des lits réservés pour les cas confirmés...
-- Le taux d’occupation des lits pour les cas suspects...
+**Taux d'occupation moyen par semaine**
 
-<br>
+*Durée de séjour calculée selon la semaine de sortie.*
 
-**Taux d'occupation moyen par semaine**  
-
-*Durée de séjour calculée en utilisant la semaine de sortie.*
-
-```{r}
-
+```{r t-bor}
 t_bor
-
 ```
 
-<br>
-
-**Taux d'occupation quotidien des lits, CTE Mongbwalu**
-
-```{r, fig.height = 4}
-
+```{r g-bor}
+#| fig-height: 4
+#| fig-cap: "Taux d'occupation quotidien des lits, CTE Mongbwalu (60 derniers jours)"
 g_bor_day
-
 ```
 
-<br>
-
-
-**Durée de séjour par semaine**
-
-```{r, fig.height = 4}
-
+```{r g-los-week}
+#| fig-height: 4
+#| fig-cap: "Durée moyenne de séjour par semaine d'admission"
 g_los_week
-
 ```
-
-<br>
 
 ## Sorties
 
-- En **`r week1`, `r n_exits_thisweek` sorties** ont été rapportées, contre `r n_exits_lastweek` en `r week2`, soit **une réduction/augmentation de `r scales::percent((n_exits_thisweek-n_exits_lastweek)/n_exits_lastweek)`**. Parmi ces sorties :
-  - `r sum(cte$evd_status == "Non cas" & cte$epiweek_exit == week1, na.rm = TRUE)` concernaient des non-cas, dont `r sum(cte$evd_status == "Non cas" & cte$epiweek_exit == week1 & cte$type_of_exit3 == "Retour à maison non-cas", na.rm = TRUE)` retours à domicile, `r sum(cte$evd_status == "Non cas" & cte$epiweek_exit == week1 & cte$type_of_exit3 == "Transféré autre structure (non cas)", na.rm = TRUE)` transferts vers d'autres structures et `r sum(cte$evd_status == "Non cas" & cte$epiweek_exit == week1 & cte$type_of_exit3 == "Décédé", na.rm = TRUE)` décès.
-  - `r sum(cte$evd_status == "Suspect" & cte$epiweek_exit == week1, na.rm = TRUE)` sorties suspects dont `r sum(cte$evd_status == "Suspect" & cte$epiweek_exit == week1 & cte$type_of_exit == "Décédé", na.rm = TRUE)` décédés et `r sum(cte$evd_status == "Suspect" & cte$epiweek_exit == week1 & cte$type_of_exit == "Abandon", na.rm = TRUE)` évadé.
-  - `r n_conf_exits_thisweek` étaient de patients confirmés contre `r n_conf_exits_lastweek` en `r week2`. Ces issues comprennent `r n_conf_gueri_thisweek` guérisons, `r n_conf_dcd_thisweek` décès (`r scales::percent(n_conf_dcd_thisweek/(n_conf_gueri_thisweek+n_conf_dcd_thisweek))`) et `r sum(cte$evd_status == "Confirmé" & cte$epiweek_exit == week1 & cte$type_of_exit == "Abandon", na.rm = TRUE)` évadé.
+- En **`r week1`, `r n_exits_thisweek` sorties** ont été rapportées, contre `r n_exits_lastweek` en `r week2`, soit **`r pct_change_text(n_exits_thisweek, n_exits_lastweek)`**. Parmi ces sorties :
+  - `r n_noncas_exit_wk` concernaient des non-cas, dont `r n_noncas_home_wk` retours à domicile, `r n_noncas_transfer_wk` transferts vers d'autres structures et `r n_noncas_dcd_wk` décès ;
+  - `r n_susp_exit_wk` sorties de cas suspects, dont `r n_susp_dcd_wk` décès et `r n_susp_abandon_wk` abandons ;
+  - `r n_conf_exits_thisweek` sorties de patients confirmés (contre `r n_conf_exits_lastweek` en `r week2`) : `r n_conf_gueri_thisweek` guérisons, `r n_conf_dcd_thisweek` décès (`r safe_percent(n_conf_dcd_thisweek, n_conf_gueri_thisweek + n_conf_dcd_thisweek)`) et `r n_conf_abandon_thisweek` abandons.
+- Parmi les cas confirmés dont l'issue est connue, le taux de létalité est de **`r scales::percent(cfr_conf$cfr / 100, 0.1)`** (`r cfr_conf$deaths`/`r cfr_conf$population` ; IC 95 % `r format_ci(cfr_conf$lower, cfr_conf$upper)` %). Les décès à l'arrivée sont exclus.
 
-- Parmi les cas confirmés dont l'issue est connue, le taux de létalité est de `r scales::percent(cfr_conf$cfr/100, 0.1)` (`r cfr_conf$deaths`/`r cfr_conf$population`).
-
-<br>
-
-**Sorties des cas confirmés et taux de létalité par semaine**
-
-```{r}
-
+```{r ec-exits}
+#| fig-cap: "Sorties des cas confirmés et proportion de décès par semaine"
 ec_exits_conf
-
 ```
-
-
-<br>
 
 ## Caractéristiques des patients
 
 - `r n_preg` femmes enceintes et `r n_lact` femmes allaitantes ont été enregistrées parmi toutes les admissions.
 
-<br>
-
 **Répartition des patients par tranche d'âge et sexe**
 
-```{r}
-
+```{r t-agesex}
 t_agesex
-
 ```
 
-<br>
+**Répartition des cas confirmés par tranche d'âge et sexe, 3 dernières semaines**
 
-**Répartition des cas confirmés par tranche d'âge et sexe, 3 semaines**
-
-```{r}
-
+```{r t-agesex-week}
 t_agesex_week
-
 ```
 
-<br>
-
-**Proportion des patients moins de 5 ans par semaine**
-
-```{r, fig.height = 4}
-
+```{r g-age}
+#| fig-height: 4
+#| fig-cap: "Proportion des patients de moins de 5 ans par semaine d'admission"
 g_age
-
 ```
 
-<br>
-
-<!-- **Répartition des patients par tranche d'âge, sexe et classification final de la MVE** -->
-
-<!-- ```{r} -->
-
-<!-- ap -->
-
-<!-- ``` -->
-
-<!-- <br> -->
-
-<!-- **Répartition des cas confirmés par tranche d'âge et sexe, dernières 3 semaines** -->
-
-<!-- ```{r} -->
-
-<!-- ap3 + -->
-<!--   theme(legend.position = "top", legend.justification = "left") + -->
-<!--   labs(subtitle = "") -->
-
-<!-- ``` -->
-
-<!-- <br> -->
-
-**Répartition des admissions par tranche d'âge et sexe, dernières 3 semaines**
-
-```{r}
-
-ap4 +
-  theme(legend.position = "top", legend.justification = "left") +
-  labs(subtitle = "")
-
+```{r ap4}
+#| fig-cap: "Répartition des admissions par tranche d'âge et sexe, 3 dernières semaines"
+ap4 + theme(legend.position = "top", legend.justification = "left") + labs(subtitle = NULL)
 ```
-
-<br>
 
 ## Provenance des patients
 
-- Au cours de la `r week1`, les cas confirmés admis au CTE provenaient des...
-
-<br>
+- Au cours de `r week1`, les cas confirmés admis au CTE provenaient des AS : `r if (nzchar(origin_conf_wk)) origin_conf_wk else "aucun cas confirmé admis"`.
 
 **Aire de santé des admissions au cours de `r week1`**
 
-```{r}
-
+```{r t-as}
 t_as
-
 ```
 
-<br>
+**Aire de santé des admissions (cumul)**
 
-**Aire de santé des admissions**
-
-```{r}
-
+```{r t-as-total}
 t_as_total
-
 ```
-
-<br>
-
-<!-- ## Délais épidémiologiques -->
-
-<!-- ```{r} -->
-
-<!-- flextable(delays_los) -->
-
-<!-- ``` -->
-
-
-```{r}
-```
-
-```{r}
-```
-
