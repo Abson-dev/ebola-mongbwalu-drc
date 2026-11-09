@@ -1,0 +1,37 @@
+name: Bug report
+description: An error, a wrong number or a broken report
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ⚠️ **Do not paste patient data** (names, IDs with clinical details, screenshots of the line list).
+        Describe the problem with aggregate numbers or synthetic data only. See SECURITY.md.
+  - type: input
+    id: script
+    attributes:
+      label: Script or report
+      placeholder: e.g. R/04_analysis_cte.R, weekly_report.qmd
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to reproduce
+      description: Report date, command used, and whether it also happens on synthetic data.
+  - type: textarea
+    id: error
+    attributes:
+      label: Error message
+      render: text
+  - type: input
+    id: session
+    attributes:
+      label: R / Quarto versions
+      placeholder: R 4.5.2, Quarto 1.8

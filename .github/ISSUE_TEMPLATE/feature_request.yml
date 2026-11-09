@@ -1,0 +1,26 @@
+name: New indicator or analysis
+description: Request a new indicator, table, figure or report section
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: "⚠️ No patient data in issues. See SECURITY.md."
+  - type: textarea
+    id: need
+    attributes:
+      label: Operational need
+      description: Who will use it, for which decision?
+    validations:
+      required: true
+  - type: textarea
+    id: definition
+    attributes:
+      label: Indicator definition
+      description: Numerator, denominator, population, period, stratification, variables of the line list.
+    validations:
+      required: true
+  - type: dropdown
+    id: output
+    attributes:
+      label: Where should it appear?
+      options: [Weekly sitrep, Analysis plan report, QA checklist, Monday table, Other]

@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Ebola Bundibugyo — Mongbwalu (DRC): epidemiological analysis pipeline of the MSF Ebola treatment centre"
+version: 1.0.0
+date-released: "2026-11-09"
+type: software
+authors:
+  - given-names: Stephanie
+    family-names: Ngai
+    affiliation: "Médecins Sans Frontières — Operational Centre Geneva"
+  - given-names: Aboubacar
+    family-names: Hema
+    email: aboubacarhema94@gmail.com
+  - given-names: Abdul Salam
+    family-names: Mbengue
+repository-code: "https://github.com/Abson-dev/ebola-mongbwalu-drc"
+keywords:
+  - Ebola
+  - Bundibugyo ebolavirus
+  - outbreak analytics
+  - epidemiology
+  - Democratic Republic of the Congo
+  - Médecins Sans Frontières
+  - R
+  - Quarto
+license-url: "https://github.com/Abson-dev/ebola-mongbwalu-drc/blob/main/LICENSE.md"
