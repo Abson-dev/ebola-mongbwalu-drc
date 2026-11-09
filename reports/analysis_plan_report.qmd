@@ -1,0 +1,253 @@
+---
+title: "Situation épidémiologique de la maladie à virus Ebola (souche Bundibugyo)"
+subtitle: "Zone de santé de Mongbwalu, Province de l'Ituri, RDC — Analyse de la line list du CTE"
+lang: fr
+params:
+  report_date: ""
+format:
+  docx:
+    reference-doc: templates/reference.docx
+    number-sections: true
+    toc: true
+    fig-dpi: 300
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+#| include: false
+
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
+                      fig.width = 10, fig.height = 5, ft.align = "left")
+
+if (nzchar(params$report_date)) report_date <- as.Date(params$report_date)
+
+source(here::here("R", "01_setup.R"), encoding = "UTF-8")
+source(here::here("R", "02_data_linelist.R"), encoding = "UTF-8")
+source(here::here("R", "04_analysis_cte.R"), encoding = "UTF-8")
+source(here::here("R", "07_analysis_plan.R"), encoding = "UTF-8")
+
+ft <- function(df) house_flextable(df) |> flextable::autofit()
+key <- function(label) pa_key$N[pa_key$Indicateur == label]
+```
+
+**Date de rédaction :** `r format_date_fr(Sys.Date())` — **Données au :** `r format(report_date, "%d/%m/%Y")` (`r week1`) — **Source :** line list du CTE de Mongbwalu (`r basename(filepath)`)
+
+**Plan d'analyse :** Dr Abdul Salam Mbengue
+
+# Analyse univariée
+
+## Chiffres clés
+
+- La line list compte **`r key("Patients enregistrés dans la line list")` patients**, dont **`r key("Cas confirmés")` cas confirmés** (`r safe_percent(key("Cas confirmés"), key("Patients enregistrés dans la line list"))`) et `r key("Patients non confirmés (tous statuts autres que Confirmé)")` patients non confirmés.
+- **`r key("Personnels de santé (tous statuts)")` personnels de santé** ont été admis, dont `r key("Personnels de santé confirmés")` confirmés.
+- **`r key("Décès (tous statuts, y compris décès à l'arrivée)")` décès** ont été enregistrés (dont `r key("Décès à l'arrivée")` décès à l'arrivée) ; `r key("Décès parmi les cas confirmés")` concernent des cas confirmés.
+
+```{r key}
+ft(pa_key)
+```
+
+**Personnels de santé admis, par catégorie et structure**
+
+```{r hcw}
+ft(pa_hcw)
+```
+
+## Admissions et décès de la dernière semaine
+
+- En **`r week1`, `r pa_week$admissions` nouvelles admissions** (hors décès à l'arrivée) ont été enregistrées au CTE, contre `r pa_week$admissions_prec` en `r week2`, soit `r pct_change_text(pa_week$admissions, pa_week$admissions_prec)`.
+- Au cours de `r week1`, **`r pa_week$confirmes` cas confirmés** ont été identifiés parmi les patients admis.
+- `r pa_week$deces` décès ont été enregistrés en `r week1`, dont `r pa_week$deces_arrivee` décès à l'arrivée.
+
+## Caractéristiques sociodémographiques des cas confirmés
+
+- Âge moyen : **`r pa_age_stats[["Moyenne"]]` ans** (écart type `r pa_age_stats[["Écart type"]]`), médiane `r pa_age_stats[["Médiane"]]` ans, extrêmes `r pa_age_stats[["Minimum"]]`–`r pa_age_stats[["Maximum"]]` ans (âge en mois converti en années).
+- Sex-ratio H/F : **`r round(pa_sex_ratio, 2)`**.
+
+```{r age-stats}
+ft(pa_age_stats)
+```
+
+::: {layout-ncol="2"}
+```{r age-group}
+ft(pa_age_group)
+```
+
+```{r sex}
+ft(pa_sex)
+```
+:::
+
+**Répartition des cas confirmés par tranche d'âge et sexe**
+
+```{r agesex}
+pa_agesex |> as_flex_table()
+```
+
+```{r pyramid}
+#| fig-cap: "Pyramide des âges des cas confirmés"
+#| fig-height: 4
+pa_pyramid + theme(legend.position = "top", legend.justification = "left")
+```
+
+**Répartition des cas confirmés par profession**
+
+```{r job}
+ft(pa_job)
+```
+
+::: {layout-ncol="2"}
+```{r pregnant}
+ft(pa_pregnant)
+```
+
+```{r breastfeeding}
+ft(pa_breastf)
+```
+:::
+
+**Répartition de tous les patients par tranche d'âge et sexe** *(tranches du sitrep)*
+
+```{r agesex-all}
+t_agesex
+```
+
+**Répartition des cas confirmés par tranche d'âge et sexe, 3 dernières semaines**
+
+```{r agesex-3w}
+t_agesex_week
+```
+
+```{r under5}
+#| fig-cap: "Proportion des patients de moins de 5 ans par semaine d'admission"
+#| fig-height: 4
+g_age
+```
+
+## Localisation des patients
+
+```{r residence}
+ft(pa_residence)
+```
+
+- Au cours de `r week1`, les cas confirmés admis au CTE provenaient des AS : `r if (nzchar(origin_conf_wk)) origin_conf_wk else "aucun cas confirmé admis"`.
+
+## Courbes épidémiques
+
+```{r ec-conf}
+#| fig-cap: "Cas confirmés par semaine de notification, selon le statut vital"
+pa_ec_conf
+```
+
+```{r ec-deaths-day}
+#| fig-cap: "Nombre de décès par jour, selon le statut MVE"
+pa_deaths_day
+```
+
+```{r ec-deaths-week}
+#| fig-cap: "Nombre de décès par semaine, selon le statut MVE"
+pa_deaths_week
+```
+
+```{r ec-adm}
+#| fig-cap: "Admissions au CTE par semaine d'admission et classification finale de la MVE"
+ec_adm
+```
+
+**Synthèse des activités de prise en charge au CTE de Mongbwalu**
+
+```{r t1}
+t1
+```
+
+## Signes cliniques des cas confirmés
+
+*Pourcentages calculés parmi les patients dont le signe est renseigné (Oui/Non).*
+
+```{r signs}
+ft(pa_signs)
+```
+
+**Manifestations hémorragiques**
+
+```{r bleeding}
+ft(pa_bleeding)
+```
+
+## Mortalité
+
+- **`r key("Décès (tous statuts, y compris décès à l'arrivée)")` décès** au total. Parmi les cas confirmés dont l'issue est connue (décès ou guérison), la létalité est de **`r pa_cfr$cfr` %** (`r pa_cfr$deaths`/`r pa_cfr$population` ; IC 95 % `r format_ci(pa_cfr$lower, pa_cfr$upper)` %). Ce calcul inclut les `r n_doa_conf` décès à l'arrivée confirmés ; hors décès à l'arrivée (définition du sitrep), la létalité est de `r cfr_conf$cfr` % (`r cfr_conf$deaths`/`r cfr_conf$population`).
+
+```{r deaths-status}
+ft(pa_deaths_status)
+```
+
+**Répartition des décès par aire de santé de résidence**
+
+```{r deaths-as}
+ft(pa_deaths_as)
+```
+
+## Laboratoire
+
+```{r lab}
+pa_lab |> as_flex_table()
+```
+
+## Délai de prise en charge
+
+*Délai = date de notification – date de début des symptômes (jours). Valeurs négatives ou > 60 jours exclues.*
+
+```{r delay}
+pa_delay |> as_flex_table()
+```
+
+# Analyses bivariées
+
+*Odds ratio bruts (régression logistique, IC 95 % de Wald) ; p : test du Chi² ou test exact de Fisher si un effectif théorique est < 5. Âge en 2 classes (< 15 ans / 15 ans et +) ; résidence en 2 classes (AS Mongbwalu / autres localisations).*
+
+## Facteurs associés à la confirmation
+
+*Population : patients avec classification finale (confirmés et non-cas). Issue : cas confirmé.*
+
+```{r biv-conf}
+ft(pa_biv_conf)
+```
+
+**Aire de santé et confirmation** *(AS de moins de 10 patients regroupées)*
+
+```{r as-conf}
+ft(pa_as_conf)
+```
+
+## Facteurs associés au décès
+
+*Population : cas confirmés dont l'issue est connue (décès ou guérison). Issue : décès.*
+
+```{r biv-death}
+ft(pa_biv_death)
+```
+
+**Aire de santé et létalité** *(AS de moins de 5 cas regroupées)*
+
+```{r as-death}
+ft(pa_as_death)
+```
+
+# Qualité des données
+
+**Pourcentage de données manquantes, toutes admissions (N = `r nrow(pa)`)**
+
+```{r missing}
+ft(bind_rows(pa_missing, pa_missing_preg))
+```
+
+# Notes méthodologiques
+
+- **Décès** : sortie de type « Décédé » ou décès à l'arrivée. La variable « type de prélèvement » (écouvillon post-mortem) mentionnée dans le plan n'existe pas dans la line list du CTE ; ces deux variables en sont l'équivalent direct.
+- **Cas suspects** : la line list distingue les suspects (en attente de classification), les probables et les non-cas ; les indicateurs « non confirmés » regroupent ces trois catégories.
+- **Tranches d'âge** : les tranches du plan se chevauchent (0-9, 5-14, 15-44, 40-49, 50+) ; les tranches non chevauchantes les plus proches ont été retenues (0-4, 5-14, 15-44, 45-49, 50+).
+- **Convulsions** : signe non collecté dans la line list.
+- Correspondance complète des variables : `docs/analysis-plan.md`.
